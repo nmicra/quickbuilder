@@ -1,6 +1,5 @@
-package com.disparko.quickbuilder
+package com.github.nmicra.quickbuilder
 
-import com.disparko.quickbuilder.Dependency
 import org.slf4j.LoggerFactory
 import org.w3c.dom.Element
 import org.w3c.dom.Node

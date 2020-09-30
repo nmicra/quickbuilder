@@ -1,4 +1,4 @@
-package com.disparko.quickbuilder
+package com.github.nmicra.quickbuilder
 
 import com.google.common.collect.EvictingQueue
 import io.github.rybalkinsd.kohttp.ext.httpGet
@@ -48,7 +48,7 @@ private val previousBuildModules by lazy {
     BuildMetadataProvider.codeBaseMap.keys.associateWith { mutableSetOf<String>() }
 }
 
-private val logger = LoggerFactory.getLogger("com.disparko.quickbuilder")
+private val logger = LoggerFactory.getLogger("com.github.nmicra")
 
 private val historyList = EvictingQueue.create<SingleBuild>(50)
 
@@ -120,7 +120,8 @@ fun Application.appStructure() {
 
         get("/rebuildmetadata/{codebaseName}"){
             val codebaseName = call.parameters["codebaseName"]!!.toLowerCase()
-            BuildMetadataProvider.codebase2MetadataMap[codebaseName] = BuildMetadataProvider.generateMetadata(codebaseName)
+            BuildMetadataProvider.codebase2MetadataMap[codebaseName] =
+                BuildMetadataProvider.generateMetadata(codebaseName)
             call.respondText("rebuildmetadata Done")
         }
 
@@ -128,19 +129,19 @@ fun Application.appStructure() {
             val codebaseName = call.parameters["codebaseName"]!!.toLowerCase()
             val src = call.parameters["src"]!!
             val dest = call.parameters["dest"]!!
-            call.respondText( BuildMetadataProvider.getPathFromDependencyGraph(codebaseName,src,dest).toString())
+            call.respondText( BuildMetadataProvider.getPathFromDependencyGraph(codebaseName, src, dest).toString())
         }
 
         get("/pathto/{codebaseName}/{dest}"){
             val codebaseName = call.parameters["codebaseName"]!!.toLowerCase()
             val dest = call.parameters["dest"]!!
-            call.respondText( BuildMetadataProvider.getDependencyPathTo(codebaseName,dest).joinToString("\n"))
+            call.respondText( BuildMetadataProvider.getDependencyPathTo(codebaseName, dest).joinToString("\n"))
         }
 
         get("/pathfrom/{codebaseName}/{src}"){
             val codebaseName = call.parameters["codebaseName"]!!.toLowerCase()
             val src = call.parameters["src"]!!
-            call.respondText( BuildMetadataProvider.getDependencyPathFrom(codebaseName,src).joinToString("\n"))
+            call.respondText( BuildMetadataProvider.getDependencyPathFrom(codebaseName, src).joinToString("\n"))
         }
 
 
@@ -169,7 +170,8 @@ fun Application.appStructure() {
 
             if (changedFilesXml.contains("pom.xml")){
                 logger.debug(">> [POM.XML CHANGED] codebaseName=$codebaseName, buildNr=$buildNr")
-                BuildMetadataProvider.codebase2MetadataMap[codebaseName] = BuildMetadataProvider.generateMetadata(codebaseName)
+                BuildMetadataProvider.codebase2MetadataMap[codebaseName] =
+                    BuildMetadataProvider.generateMetadata(codebaseName)
             }
 
 
@@ -264,7 +266,7 @@ fun allModulesAllArtifacts(codebaseName : String) : String = File("${BuildMetada
 /**
  * This fun removes all child modules, when parent module exists
  */
-fun removeSubModulesWhenParentExist(modules: Set<String>): Set<String> = modules.filter {!isPrefixOfAnyItemInList(it, modules.toList().minus(it))}.toSet()
+fun removeSubModulesWhenParentExist(modules: Set<String>): Set<String> = modules.filter {!isPrefixOfAnyItemInList(it, modules.toList().minus(it)) }.toSet()
 
 /**
  * Returns TRUE when the given item(String) is prefix of any other item in the given list

@@ -1,6 +1,6 @@
-package com.disparko.quickbuilder
+package com.github.nmicra.quickbuilder
 
-import com.disparko.quickbuilder.XmlUtil
+import com.google.common.collect.ArrayListMultimap
 import org.jgrapht.GraphPath
 import org.jgrapht.alg.shortestpath.DijkstraShortestPath
 import org.jgrapht.graph.DefaultEdge
@@ -12,7 +12,7 @@ import kotlin.system.measureTimeMillis
 
 object BuildMetadataProvider {
 
-    private val logger = LoggerFactory.getLogger("com.disparko.quickbuilder.BuildMetadataProvider")
+    private val logger = LoggerFactory.getLogger("com.github.nmicra.quickbuilder.BuildMetadataProvider")
 
 
     /**
@@ -73,14 +73,19 @@ object BuildMetadataProvider {
                 metadata.inverseDependencyGraph.addVertex(groupArtifact)
                 metadata.groupArtifact2ModuleMap[groupArtifact] = it.removeSuffix("/")
                 val dependencies = XmlUtil.extractDependencies(File("$codeLocation/$it/pom.xml").readText())
-                    .filter { it.groupId.startsWith("com.disparko") }
+                    .filter { it.groupId.startsWith("github.nmicra") }
                     .filter { it.scope == "compile" }
                 dependencies.forEach {
                     metadata.inverseDependencyGraph.addVertex("${it.groupId}:${it.artifactId}")
                     metadata.inverseDependencyGraph.addEdge("${it.groupId}:${it.artifactId}", groupArtifact)
                 }
             }
-            getManualDependencyMapping().forEach { metadata.inverseDependencyGraph.addEdge(it.key,it.value) }
+            getManualDependencyMapping().asMap().forEach{ mapEntry ->
+                mapEntry.value.forEach {
+
+                    metadata.inverseDependencyGraph.addEdge(mapEntry.key,it)
+                }
+            }
         }
         logger.info("metadata generation [codebaseName=$codebaseName] took $duration milis")
         return metadata
@@ -125,9 +130,12 @@ object BuildMetadataProvider {
     }
 
 
-    fun getManualDependencyMapping() : Map<String,String> = this::class.java.classLoader.getResource("manual-dependency-map.conf").readText()
-                                                            .split("\n").associate {
-                                                            val (left, right) = it.split("=>")
-                                                            left.trim() to right.trim() }
+    fun getManualDependencyMapping() : ArrayListMultimap<String, String> {
+        val map : ArrayListMultimap<String,String> = ArrayListMultimap.create()
+        val list = this::class.java.classLoader.getResource("manual-dependency-map.conf").readText().split("\n").toList()
+        list.forEach { val (left, right) = it.split("=>")
+            map.put(left.trim(),right.trim())}
+        return map
+    }
 
 }

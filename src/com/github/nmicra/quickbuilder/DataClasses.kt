@@ -1,4 +1,4 @@
-package com.disparko.quickbuilder
+package com.github.nmicra.quickbuilder
 
 import org.jgrapht.graph.DefaultDirectedGraph
 import org.jgrapht.graph.DefaultEdge
