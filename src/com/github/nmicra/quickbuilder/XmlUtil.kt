@@ -13,7 +13,7 @@ import javax.xml.xpath.XPathFactory
 
 object XmlUtil {
 
-    private val logger = LoggerFactory.getLogger("com.disparko.quickbuilder.XmlUtil")
+    private val logger = LoggerFactory.getLogger("com.github.nmicra.quickbuilder.XmlUtil")
     private val dbFactory = DocumentBuilderFactory.newInstance()
     private val dBuilder  = dbFactory.newDocumentBuilder()
     private val xpFactory = XPathFactory.newInstance()
