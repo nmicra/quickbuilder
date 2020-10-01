@@ -35,7 +35,6 @@ private val buildTemplatePomXml = """<?xml version="1.0" encoding="UTF-8"?>
 	<version>tmp</version>
 	
 	<modules>
-        <module>devenv/setup</module>
         MODULES_PLACEHOLDER
 	</modules>
 </project>""".trimIndent()

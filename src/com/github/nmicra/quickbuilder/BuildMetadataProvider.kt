@@ -14,6 +14,11 @@ object BuildMetadataProvider {
 
     private val logger = LoggerFactory.getLogger("com.github.nmicra.quickbuilder.BuildMetadataProvider")
 
+    private val scanGroupId by lazy { appEnv.config.propertyOrNull("ktor.scan.groupId")?.getString() ?: error("The property [ktor.scan.groupId] must contain NON EMPTY value") }
+    private val excludeDirs by lazy { appEnv.config.propertyOrNull("ktor.scan.excludeDirs")?.getList() ?: error("The property [ktor.scan.excludeDirs] must contain NON EMPTY value") }
+    private val includePackaging by lazy { appEnv.config.propertyOrNull("ktor.scan.includePackaging")?.getList() ?: error("The property [ktor.scan.includePackaging] must contain NON EMPTY value") }
+    private val scanDepth by lazy { appEnv.config.propertyOrNull("ktor.scan.depth")?.getString()?.toInt() ?: error("The property [ktor.scan.depth] must contain NON EMPTY value") }
+
 
     /**
      * mapping between codebaseName (like development,master), to whole Metadata collected for that particular codebase
@@ -45,12 +50,14 @@ object BuildMetadataProvider {
 
 
     /**
-     * Searches for all poms in the codebase [NOTE: hardcoded depth=6]
+     * Searches for all poms in the codebase
      * @return set of absolutePath for the poms that were found.
      */
-    private fun loadPomXmls(codeBase : String) : Set<String> = File(codeBase).walkTopDown().maxDepth(6).asSequence()
+    private fun loadPomXmls(codeBase : String) : Set<String> = File(codeBase).walkTopDown().maxDepth(scanDepth).asSequence()
         .filter { it.isFile }
         .filter { it.name=="pom.xml" }
+        .filterNot {f -> excludeDirs.any { f.absolutePath.contains(it) } }
+        .filter { f -> includePackaging.any { f.readText().contains("<packaging>$it</packaging>") } }
         .map { it.absolutePath.removeSuffix("pom.xml") }
         .map { it.removePrefix(File(codeBase).absolutePath) }
         .map { it.replace('\\','/') } // relevant only in windows machines
@@ -63,8 +70,7 @@ object BuildMetadataProvider {
         artifactsToBuildCache.clear()
         val duration = measureTimeMillis {
             val codeLocation = codebase ?: codeBaseMap[codebaseName]!!
-            val xmls = loadPomXmls(codeLocation).filterNot { it.contains("node_modules") }
-                .filterNot { it.contains("devenv/pompoms") }.toSet() // Exclude directories
+            val xmls = loadPomXmls(codeLocation)
             metadata = BuildMetadata(xmls)
 
             xmls.forEach {
@@ -73,7 +79,7 @@ object BuildMetadataProvider {
                 metadata.inverseDependencyGraph.addVertex(groupArtifact)
                 metadata.groupArtifact2ModuleMap[groupArtifact] = it.removeSuffix("/")
                 val dependencies = XmlUtil.extractDependencies(File("$codeLocation/$it/pom.xml").readText())
-                    .filter { it.groupId.startsWith("github.nmicra") }
+                    .filter { it.groupId.startsWith(scanGroupId) }
                     .filter { it.scope == "compile" }
                 dependencies.forEach {
                     metadata.inverseDependencyGraph.addVertex("${it.groupId}:${it.artifactId}")
